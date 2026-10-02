@@ -25,6 +25,9 @@ import zipfile
 
 NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
 OUTPUT_ROOT = Path(__file__).resolve().parent / "output"
+DEFAULT_DOCX = Path(__file__).resolve().parent / "reference" / "New_Oriental_50.docx"
+if not DEFAULT_DOCX.exists():
+    DEFAULT_DOCX = Path(__file__).resolve().with_name("New_Oriental_50.docx")
 DEFAULT_TITLE_PATTERN = r"^\s*(\d{1,3})[.、．:：\s]+(.+?)\s*$"
 VOICE_PARAMETERS = {
     "ELEVENLABS_SPEED": ("speed", 1.0, 0.25, 4.0),
@@ -266,7 +269,7 @@ def merge_audio(parts: list[Path], destination: Path, ffmpeg: str | None) -> Non
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("docx", nargs="?", type=Path, default=Path("New_Oriental_50.docx"))
+    parser.add_argument("docx", nargs="?", type=Path, default=DEFAULT_DOCX)
     parser.add_argument("--articles-json", type=Path, help="Read extracted English articles from JSON instead of DOCX")
     parser.add_argument("--output", default="audio", help="Folder name under the project's output/ directory")
     parser.add_argument("--dry-run", action="store_true", help="Export text and manifest without calling the API")

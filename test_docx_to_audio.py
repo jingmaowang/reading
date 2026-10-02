@@ -10,6 +10,7 @@ from unittest.mock import patch
 import urllib.error
 
 import docx_to_audio as app
+SOURCE_DOCX = app.DEFAULT_DOCX
 
 
 class AudioResponse(io.BytesIO):
@@ -27,7 +28,7 @@ class NarrationTests(unittest.TestCase):
                     "ELEVENLABS_TEXT_NORMALIZATION=on\nELEVENLABS_SEED=42\n"
                     "ELEVENLABS_OUTPUT_FORMAT=mp3_44100_192\n")
             env_file.write_text(text, encoding="utf-8")
-            argv = ["docx_to_audio.py", str(Path(__file__).with_name("New_Oriental_50.docx")),
+            argv = ["docx_to_audio.py", str(SOURCE_DOCX),
                     "--output", "audio", "--end", "1", "--env-file", str(env_file)]
             with patch("sys.argv", argv), patch.dict("os.environ", {}, clear=True), patch(
                 "urllib.request.urlopen", side_effect=lambda *a, **kw: AudioResponse(b"fake-audio")
@@ -78,7 +79,7 @@ class NarrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch.object(app, "OUTPUT_ROOT", Path(directory)):
             env_file = Path(directory) / ".env"
             env_file.write_text("ELEVENLABS_API_KEY=file-key\nELEVENLABS_VOICE_ID=file-voice\n", encoding="utf-8")
-            argv = ["docx_to_audio.py", str(Path(__file__).with_name("New_Oriental_50.docx")),
+            argv = ["docx_to_audio.py", str(SOURCE_DOCX),
                     "--output", "audio", "--end", "1", "--env-file", str(env_file)]
             with patch("sys.argv", argv), patch.dict("os.environ", {}, clear=True), patch(
                 "urllib.request.urlopen", side_effect=lambda *a, **kw: AudioResponse(b"fake-audio")
@@ -95,7 +96,7 @@ class NarrationTests(unittest.TestCase):
                     self.assertEqual(http.call_args.args[0].get_header("Xi-api-key"), "environment-key")
 
     def test_real_document_boundaries(self):
-        articles = app.read_articles(Path(__file__).with_name("New_Oriental_50.docx"), app.DEFAULT_TITLE_PATTERN)
+        articles = app.read_articles(SOURCE_DOCX, app.DEFAULT_TITLE_PATTERN)
         self.assertEqual(len(articles), 50)
         self.assertEqual(articles[0]["title"], "The Language of Music")
         self.assertEqual(articles[-1]["title"], "Cells and Temperature")
@@ -117,7 +118,7 @@ class NarrationTests(unittest.TestCase):
                 if file_model:
                     content += f"ELEVENLABS_MODEL_ID={file_model}\n"
                 env_file.write_text(content, encoding="utf-8")
-                argv = ["docx_to_audio.py", str(Path(__file__).with_name("New_Oriental_50.docx")),
+                argv = ["docx_to_audio.py", str(SOURCE_DOCX),
                         "--output", "audio", "--end", "1", "--env-file", str(env_file)] + flags
                 with patch("sys.argv", argv), patch.dict("os.environ", environment, clear=True), patch(
                     "urllib.request.urlopen", side_effect=lambda *a, **kw: AudioResponse(b"fake-audio")
@@ -134,7 +135,7 @@ class NarrationTests(unittest.TestCase):
 
     def test_request_and_resume(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(app, "OUTPUT_ROOT", Path(directory)):
-            argv = ["docx_to_audio.py", str(Path(__file__).with_name("New_Oriental_50.docx")),
+            argv = ["docx_to_audio.py", str(SOURCE_DOCX),
                     "--output", "result", "--end", "1", "--env-file", str(Path(directory) / "missing.env")]
             with patch("sys.argv", argv), patch.dict("os.environ", {
                 "ELEVENLABS_API_KEY": "test-secret", "ELEVENLABS_VOICE_ID": "my-voice",
@@ -157,7 +158,7 @@ class NarrationTests(unittest.TestCase):
 
     def test_dry_run_does_not_call_api(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(app, "OUTPUT_ROOT", Path(directory)), patch("sys.argv", [
-            "docx_to_audio.py", str(Path(__file__).with_name("New_Oriental_50.docx")),
+            "docx_to_audio.py", str(SOURCE_DOCX),
             "--output", "result", "--dry-run",
         ]), patch("urllib.request.urlopen") as http, contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(app.main(), 0)
@@ -171,7 +172,7 @@ class NarrationTests(unittest.TestCase):
     def test_legacy_output_migrates_and_resumes_without_api(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(app, "OUTPUT_ROOT", Path(directory)):
             root = Path(directory) / "result"
-            argv = ["docx_to_audio.py", str(Path(__file__).with_name("New_Oriental_50.docx")),
+            argv = ["docx_to_audio.py", str(SOURCE_DOCX),
                     "--output", "result", "--end", "1", "--env-file", str(root / "missing.env")]
             with patch("sys.argv", argv), patch.dict("os.environ", {
                 "ELEVENLABS_API_KEY": "test-key", "ELEVENLABS_VOICE_ID": "test-voice",

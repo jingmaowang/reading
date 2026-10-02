@@ -1,0 +1,11 @@
+audio/
+output/
+other_audio/
+New_Oriental_30/
+tmp/pdfs/
+__pycache__/
+.env
+.env.*
+!.env.example
+output/
+reference/
